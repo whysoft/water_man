@@ -12,7 +12,7 @@
 指令
 c0 <freq_high> <freq_low> <delay_high> <delay_low>
 返回OK\n\r
-freq=0是静音
+freq值越小频率越高
 
 c1 00 00 00 00
 命令接通
