@@ -1,0 +1,55 @@
+
+INPUTPATH = .\
+OUTPUTFN =  .\ta00light.xpp
+
+
+###
+
+
+static int ta00light_state = 0;
+
+//static unsigned char ta00_j = 0;
+#define ta00_j P1
+
+
+#if	 0
+//#THREADBEGIN#
+void ta00light( int *pstate )
+{
+	//#FUNCBEGIN#
+
+	while(1)
+	{
+		ta00_j = 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+		
+		ta00_j <<= 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+
+
+	}
+
+	//#FUNCEND#
+}
+//#THREADEND#
+#endif
+
+

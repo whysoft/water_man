@@ -1,0 +1,55 @@
+
+//写入一扇区
+struct M1Sect_t
+{
+	U32	m_sect_num		;//	扇区号
+	U8	m_buf	[512]	;//	扇区内容
+};
+
+
+
+
+//文件索引结构
+struct M2Content_t
+{
+	U32	m_begin_sect_num		;//	起始扇区号
+	U32	m_end_sect_num		;//	结束扇区号
+	U32	m_sect_num			;//	扇区数
+	U32	m_filelen			;//	文件长度字节
+	U16	m_lastsectvalid		;//	最后一扇区有效字节数
+	char m_type	[4]	;//	文件类型 扩展名 
+	char m_name	[200]	;//	文件名
+};
+
+
+
+ 
+U16 val; 
+U16  u1, u2, u3, u4;
+U8 c1, c2, c3, c4, c5;
+U8 buf1[33];
+struct TM_t music_tm;
+
+
+
+
+
+
+//
+//#include "_BST_tasks\\ta34key44scan.xpp"
+//#include "_BST_tasks\\ta35getvalues.xpp"
+//#include "_BST_tasks\\ta31beeplong.xpp"
+//
+//#include "_BST_tasks\\ta1comrecv.xpp"
+//#include "_BST_tasks\\ta2comrecv.xpp"
+//#include "_BST_tasks\\ta3postcmd.xpp"
+//
+//#include "_BST_tasks\\ta61f4query.xpp"
+//#include "_BST_tasks\\ta62weight.xpp"
+//#include "_BST_tasks\\ta63input.xpp"
+
+
+
+
+
+

@@ -1,0 +1,10 @@
+"a_comfunc.obj",
+"a_strfunc.obj",
+"Delay_12M.obj",
+"main.obj",
+"mainioport.obj",
+"UNIQ_ID.obj",
+"stc12_adc.obj",
+"a_timerfunc.obj" 
+TO "½½Ë®Ö÷°å" 
+RAMSIZE(256) 

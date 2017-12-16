@@ -1,0 +1,336 @@
+C51 COMPILER V9.00   MAIN                                                                  12/15/2017 18:39:34 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c LARGE BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*******************/
+   2          //#include <reg52.h>
+   3          #include "STDIO.H"
+   4          #include "STDLIB.H"
+   5          #include "INTRINS.H"
+   6          #include "STRING.H"
+   7          #include "Delay_12M.h"
+   8          #include "UNIQ_ID.h"
+   9          #include "a_strfunc.h"
+  10          #include "a_comfunc.h"
+  11          #include "a_timerfunc.h"
+  12          //#include "lcd_12864.h"
+  13          //#include "PCF8591_IIC.h"
+  14          #include "mainioport.h"
+  15          //#include "EEPROM.h"
+  16          #include "stc12_adc.h"
+  17          //#include "a_ll1func.h"
+  18          
+  19          
+  20          unsigned char idata g_ctrl_timer[2];
+  21          unsigned int idata * idata g_p_ctrl_timer;
+  22          
+  23          #define    IAP_ADDRE   0x0000
+  24          
+  25          #define    FIRMWAREVER   "V1.01"
+  26          
+  27          #define S2_S0 0x01              //P_SW2.0
+  28          
+  29          
+  30          
+  31          
+  32          #include "main1.xpp"
+  33          //#include "main2.xpp"
+  34          //
+  35          
+  36          
+  37          
+  38          
+  39          void Timer0Init(void)           //1毫秒@24.000MHz
+  40          {
+  41   1              AUXR |= 0x80;           //定时器时钟1T模式
+  42   1              TMOD &= 0xF0;           //设置定时器模式
+  43   1              TL0 = 0x40;             //设置定时初值
+  44   1              TH0 = 0xA2;             //设置定时初值
+  45   1              TF0 = 0;                //清除TF0标志
+  46   1              TR0 = 1;                //定时器0开始计时
+  47   1      }
+  48          
+  49          
+  50          
+  51          
+  52          void UartInit(void)             //57600bps@24.000MHz
+  53          {
+  54   1              PCON &= 0x7F;           //波特率不倍速
+  55   1              SCON = 0x50;            //8位数据,可变波特率
+C51 COMPILER V9.00   MAIN                                                                  12/15/2017 18:39:34 PAGE 2   
+
+  56   1              AUXR |= 0x40;           //定时器1时钟为Fosc,即1T
+  57   1              AUXR &= 0xFE;           //串口1选择定时器1为波特率发生器
+  58   1              TMOD &= 0x0F;           //清除定时器1模式位
+  59   1              TMOD |= 0x20;           //设定定时器1为8位自动重装方式
+  60   1              TL1 = 0xF3;             //设定定时初值
+  61   1              TH1 = 0xF3;             //设定定时器重装值
+  62   1              ET1 = 0;                //禁止定时器1中断
+  63   1              TR1 = 1;                //启动定时器1
+  64   1      }
+  65          
+  66          
+  67          
+  68          void Uart2AInit(void)           //115200bps@24.000MHz
+  69          {
+  70   1              S2CON = 0x50;           //8位数据,可变波特率
+  71   1              AUXR |= 0x04;           //定时器2时钟为Fosc,即1T
+  72   1              T2L = 0xCC;             //设定定时初值
+  73   1              T2H = 0xFF;             //设定定时初值
+  74   1              AUXR |= 0x10;           //启动定时器2
+  75   1      }
+  76          
+  77          
+  78          
+  79          
+  80                            
+  81          
+  82          /*------------------------------------------------
+  83          串口中断程序
+  84          ------------------------------------------------*/
+  85          void UART_SER() interrupt 4 //串行中断服务程序
+  86          {
+  87   1              if(RI)      //判断是接收中断产生
+  88   1              {
+  89   2                      //RI=0;     //标志位清零
+  90   2      
+  91   2                      //ta1comrecv( &ta1comrecv_state );
+  92   2              }
+  93   1      
+  94   1              if(TI)    //如果是发送标志位，清零
+  95   1              {
+  96   2                      TI=0;
+  97   2                      Com1_TI_flag = 1; //这样等于发送没做，另找一个flag
+  98   2              }
+  99   1      }
+ 100                          
+ 101          
+ 102          
+ 103          
+ 104          #define S2RI  0x01              //S2CON.0
+ 105          #define S2TI  0x02              //S2CON.1
+ 106          
+ 107          /*----------------------------
+ 108          UART2 中断服务程序
+ 109          -----------------------------*/
+ 110          void Uart2() interrupt 8  
+ 111          {
+ 112   1          if (S2CON & S2RI)      //判断是接收中断产生
+ 113   1          {
+ 114   2              S2CON &= ~S2RI;         //清除S2RI位
+ 115   2              
+ 116   2                      //ta32com2( &ta32com2_state );
+ 117   2          }
+C51 COMPILER V9.00   MAIN                                                                  12/15/2017 18:39:34 PAGE 3   
+
+ 118   1      
+ 119   1          if (S2CON & S2TI)    //如果是发送标志位，清零
+ 120   1          {
+ 121   2              S2CON &= ~S2TI;         //清除S2TI位 
+ 122   2                      Com2_TI_flag = 1; //这样等于发送没做，另找一个flag
+ 123   2          }
+ 124   1                      
+ 125   1      }
+ 126          
+ 127          
+ 128          
+ 129          
+ 130          //
+ 131          //主函数 入口函数:
+ 132          void main()
+ 133          {
+ 134   1              g_p_ctrl_timer = (unsigned int*)g_ctrl_timer;
+ 135   1              *g_p_ctrl_timer = 65535L - 59999;
+ 136   1              
+ 137   1              //初始化
+ 138   1              EA=0;           // 总中断
+ 139   1       
+ 140   1              Timer0Init();
+ 141   1              g_ctrl_timer[0] = TH0;
+ 142   1              g_ctrl_timer[1] = TL0;
+ 143   1              //TH0 = g_ctrl_timer[0];
+ 144   1              //TL0 = g_ctrl_timer[1];
+ 145   1              ET0=1;          //开启定时器0中断
+ 146   1              TR0=1;          //启动定时器0
+ 147   1      
+ 148   1              UartInit();
+ 149   1          ES    = 1;        // 1=打开串口中断 
+ 150   1      
+ 151   1              Uart2AInit();
+ 152   1              //P_SW2 &= ~S2_S0;     //S2_S0=0 (P1.0/RxD2, P1.1/TxD2)
+ 153   1              IE2 = 0x01;                      //使能串口2中断
+ 154   1              
+ 155   1              ////切换优先级
+ 156   1              //PT0 = 0;
+ 157   1              //PS = 1;
+ 158   1              //IP2 |= 1;
+ 159   1      
+ 160   1              EA  = 1;          //打开总中断 
+ 161   1      
+ 162   1      
+ 163   1              LET_BEEP_OFF;
+ 164   1              LET_LIGHT1_OFF;
+ 165   1      
+ 166   1              DelayS(1);
+ 167   1      
+ 168   1              //用户初始化 
+ 169   1      
+ 170   1              //load_M1_EEdata( &M1 );
+ 171   1              //load_M6_default( &M6do );
+ 172   1              tm_init( &music_tm ); 
+ 173   1      
+ 174   1              mainioport_init();
+ 175   1              InitADC( 0x40 ); // 0100-0000   
+ 176   1              
+ 177   1              LET_LIGHT1_OFF;
+ 178   1              LET_LED4_OFF;
+ 179   1      
+C51 COMPILER V9.00   MAIN                                                                  12/15/2017 18:39:34 PAGE 4   
+
+ 180   1      
+ 181   1              DelayMs(666);
+ 182   1                      
+ 183   1      
+ 184   1      L_VeryBegin:;
+ 185   1      
+ 186   1              while(EA)
+ 187   1              {
+ 188   2                      //接收5字节命令 
+ 189   2                      Com1Recv(); if( Com1Recv_rc == 1 ) buf1[0] = Com1Recv_c; else goto L_VeryBegin;
+ 190   2                      Com1Recv(); if( Com1Recv_rc == 1 ) buf1[1] = Com1Recv_c; else goto L_VeryBegin;
+ 191   2                      Com1Recv(); if( Com1Recv_rc == 1 ) buf1[2] = Com1Recv_c; else goto L_VeryBegin;
+ 192   2                      Com1Recv(); if( Com1Recv_rc == 1 ) buf1[3] = Com1Recv_c; else goto L_VeryBegin;
+ 193   2                      Com1Recv(); if( Com1Recv_rc == 1 ) buf1[4] = Com1Recv_c; else goto L_VeryBegin;
+ 194   2      
+ 195   2                      //认领 c0 <freq_high> <freq_low> <delay_high> <delay_low>
+ 196   2                      if( buf1[0] == 0xc0 )
+ 197   2                      {
+ 198   3                              u1 = buf1[1];
+ 199   3                              u1 <<= 8;
+ 200   3                              u1 += buf1[2];
+ 201   3      
+ 202   3                              u2 = buf1[3];
+ 203   3                              u2 <<= 8;
+ 204   3                              u2 += buf1[4];
+ 205   3      
+ 206   3                              tm_rst( &music_tm , u2 ); 
+ 207   3      
+ 208   3                              while(1)
+ 209   3                              {
+ 210   4                                      for( u3 = 0; u3 < u1; u3++ )
+ 211   4                                      {
+ 212   5                                      }
+ 213   4                                      LET_BEEP_NOT;
+ 214   4                                      if( music_tm.overflow_flag ) break;
+ 215   4                              }
+ 216   3      
+ 217   3                              Com1SendU8ss( "OK\r\n" );
+ 218   3      
+ 219   3                              tm_mainfollow( &music_tm ); 
+ 220   3      
+ 221   3                              LET_BEEP_OFF;
+ 222   3      
+ 223   3                              goto L_VeryBegin;
+ 224   3                      }
+ 225   2      
+ 226   2      
+ 227   2                      //认领 c1 00 00 00 00
+ 228   2                      if( buf1[0] == 0xc1 )
+ 229   2                      {
+ 230   3                              LET_LIGHT1_ON;
+ 231   3                              Com1SendU8ss( "OK\r\n" );
+ 232   3      
+ 233   3                              goto L_VeryBegin;
+ 234   3                      }
+ 235   2      
+ 236   2      
+ 237   2                      //认领 c2 00 00 00 00
+ 238   2                      if( buf1[0] == 0xc2 )
+ 239   2                      {
+ 240   3                              LET_LIGHT1_OFF;
+ 241   3                              Com1SendU8ss( "OK\r\n" );
+C51 COMPILER V9.00   MAIN                                                                  12/15/2017 18:39:34 PAGE 5   
+
+ 242   3      
+ 243   3                              goto L_VeryBegin;
+ 244   3                      }
+ 245   2      
+ 246   2                      //认领 c3 00 00 00 00
+ 247   2                      if( buf1[0] == 0xc3 )
+ 248   2                      {
+ 249   3                              val = GetADCResult( 6 );
+ 250   3                              u2 = WETBOOL;
+ 251   3                              
+ 252   3                              sprintf( buf1, "%u,%u\r\n", val, u2 );
+ 253   3                              Com1SendU8ss( buf1 );
+ 254   3      
+ 255   3                              goto L_VeryBegin;
+ 256   3                      }
+ 257   2              }
+ 258   1      
+ 259   1      
+ 260   1      
+ 261   1      
+ 262   1              //while(!EA)
+ 263   1              {
+ 264   2                      DelayMs(2);
+ 265   2                      LET_BEEP_NOT;
+ 266   2              }
+ 267   1      
+ 268   1              LET_BEEP_OFF;
+ 269   1              LET_LIGHT1_OFF;
+ 270   1      
+ 271   1      
+ 272   1       
+ 273   1      
+ 274   1              while(1)
+ 275   1              {
+ 276   2      
+ 277   2      //BEGIN_L:
+ 278   2      
+ 279   2                      LET_LIGHT1_OFF;
+ 280   2                      
+ 281   2                      DelayS(1);
+ 282   2      
+ 283   2                      
+ 284   2                      LET_LIGHT1_ON;
+ 285   2      
+ 286   2                      DelayS(1);
+ 287   2                       
+ 288   2              }
+ 289   1                       
+ 290   1      }       
+ 291          
+ 292          
+ 293                  
+ 294          //
+ 295          void timer() interrupt 1  
+ 296          {
+ 297   1              //TH0 = g_ctrl_timer[0];
+ 298   1              //TL0 = g_ctrl_timer[1];
+ 299   1      
+ 300   1              tm_tk( &music_tm );
+ 301   1      }
+ 302          
+ 303          
+C51 COMPILER V9.00   MAIN                                                                  12/15/2017 18:39:34 PAGE 6   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    697    ----
+   CONSTANT SIZE    =     13    ----
+   XDATA SIZE       =     75    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =      3    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

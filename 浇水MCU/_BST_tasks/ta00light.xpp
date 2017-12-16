@@ -1,0 +1,118 @@
+
+
+static int ta00light_state = 0;
+
+//static unsigned char ta00_j = 0;
+#define ta00_j P1
+
+
+#if	 0
+//#THREADBEGIN#
+void ta00light( int *pstate )
+{
+	//#FUNCBEGIN#
+
+	while(1)
+	{
+		ta00_j = 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+		
+		ta00_j <<= 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+
+		ta00_j <<= 1;
+		##DELAY#
+
+
+	}
+
+	//#FUNCEND#
+}
+//#THREADEND#
+#endif
+
+
+/*======== donnot modify the generated code below manually =========*/ 
+
+//#THREADBEGIN#
+void ta00light( int *pstate )
+{
+	//#FUNCBEGIN#
+	switch (*pstate) { 
+	case 1 : goto LL_1; 
+	case 2 : goto LL_2; 
+	case 3 : goto LL_3; 
+	case 4 : goto LL_4; 
+	case 5 : goto LL_5; 
+	case 6 : goto LL_6; 
+	case 7 : goto LL_7; 
+	case 8 : goto LL_8; 
+	default: break; 
+	} 
+
+
+	while(1)
+	{
+		ta00_j = 1;
+		*pstate = 1;
+		return;
+		LL_1:;
+
+		ta00_j <<= 1;
+		*pstate = 2;
+		return;
+		LL_2:;
+		
+		ta00_j <<= 1;
+		*pstate = 3;
+		return;
+		LL_3:;
+
+		ta00_j <<= 1;
+		*pstate = 4;
+		return;
+		LL_4:;
+
+		ta00_j <<= 1;
+		*pstate = 5;
+		return;
+		LL_5:;
+
+		ta00_j <<= 1;
+		*pstate = 6;
+		return;
+		LL_6:;
+
+		ta00_j <<= 1;
+		*pstate = 7;
+		return;
+		LL_7:;
+
+		ta00_j <<= 1;
+		*pstate = 8;
+		return;
+		LL_8:;
+
+
+	}
+
+	//#FUNCEND#
+}
+//#THREADEND#
+
+

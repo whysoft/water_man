@@ -1,0 +1,351 @@
+C51 COMPILER V9.00   A_TIMERFUNC                                                           12/15/2017 18:39:34 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE A_TIMERFUNC
+OBJECT MODULE PLACED IN a_timerfunc.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE a_timerfunc.c LARGE BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          
+   2           //     2017-02-10
+   3          
+   4          //#include "reg52.h"
+   5          #include "string.h"
+   6          #include "a_strfunc.h"
+   7          #include "a_timerfunc.h"
+   8          
+   9          
+  10          //比如stc89c52为0xe7，stc125a60s2为0xc7; 
+  11          
+  12          sfr IAP_CONTR=0xc7;
+  13          
+  14          
+  15          
+  16          #if 1
+  17          
+  18          
+  19          
+  20          // e.g.
+  21          //struct        TM_t    tm_grind1;
+  22          //struct        TM_t    tm_pause1;
+  23          //struct        TM_t    tm_dim;
+  24          //struct        TM_t    tm_total;
+  25          
+  26          
+  27          
+  28          
+  29          /* 支持的优先级是：在timer中走tk， 在main中rst
+  30                  或在main中走tk和rst     */
+  31          
+  32          
+  33          
+  34          //0=在timer中走tk， 在main中rst
+  35          //1=在main中走tk和rst
+  36          #define TM_PRIORITY_MODE  0
+  37          
+  38          
+  39          
+  40          //0=tk频繁，rst不频繁
+  41          //1=tk缓慢，rst频繁
+  42          #define TM_OFTEN_MODE  0
+  43          
+  44          
+  45          
+  46          
+  47          
+  48          //
+  49          void tm_init( struct TM_t *t )
+  50          {
+  51   1              //t->rst_cmd = 0;
+  52   1              //t->rst_value = 0;
+  53   1              //t->inter_counter = 0;
+  54   1              //t->overflow_flag = 0;
+  55   1              //t->pause_cmd = 0;
+C51 COMPILER V9.00   A_TIMERFUNC                                                           12/15/2017 18:39:34 PAGE 2   
+
+  56   1              //t->ex_is_busy0 = 0;
+  57   1              //t->ex_is_busy1 = 0;
+  58   1              //t->ex_is_hot0 = 0;
+  59   1              //t->ex_is_hot1 = 0;
+  60   1              //t->ex_counter0 = 0;
+  61   1              //t->ex_counter1 = 0;
+  62   1              //t->ex_counter2 = 0;
+  63   1      
+  64   1      
+  65   1              memset( t, 0, sizeof(struct TM_t) );            
+  66   1      }
+  67          
+  68          
+  69          
+  70          //每个tk触发一次减1
+  71          void tm_tk( struct TM_t *t )
+  72          {
+  73   1              if( t->rst_cmd ) 
+  74   1              {
+  75   2                      t->inter_counter = t->rst_value;
+  76   2      
+  77   2                      t->overflow_flag = 0;
+  78   2       
+  79   2      
+  80   2      #if TM_PRIORITY_MODE == 0  
+  81   2                      t->rst_cmd = 0;
+  82   2      #else 
+               
+                      //如果tk频繁则tk中应该--，如果rst频繁则tk中应该直接清0
+                      #if TM_OFTEN_MODE == 0
+                                      t->rst_cmd --;
+                      #else 
+                                      t->rst_cmd = 0;
+                      #endif
+                 
+              #endif
+  92   2      
+  93   2              }
+  94   1      
+  95   1      
+  96   1              do{
+  97   2      
+  98   2                      if( t->inter_counter == 0 )
+  99   2                      {
+ 100   3                              t->overflow_flag = 1;
+ 101   3                              break;
+ 102   3                      }
+ 103   2      
+ 104   2                      if( t->pause_cmd ) break;
+ 105   2      
+ 106   2                      t->inter_counter --;
+ 107   2              
+ 108   2                      if( t->inter_counter == 0 )
+ 109   2                      {
+ 110   3                              t->overflow_flag = 1;
+ 111   3                              break;
+ 112   3                      }
+ 113   2      
+ 114   2              }while(0);
+ 115   1      
+ 116   1              if( !t->ex_is_busy0 )
+ 117   1              {
+C51 COMPILER V9.00   A_TIMERFUNC                                                           12/15/2017 18:39:34 PAGE 3   
+
+ 118   2                      t->ex_counter0 = t->inter_counter;
+ 119   2                      t->ex_is_hot0 = 1;
+ 120   2              }
+ 121   1      
+ 122   1              if( !t->ex_is_busy1 )
+ 123   1              {
+ 124   2                      t->ex_counter1 = t->inter_counter;
+ 125   2                      t->ex_is_hot1 = 1;
+ 126   2              }
+ 127   1      }
+ 128          
+ 129          
+ 130          
+ 131          
+ 132          #if 0
+              //每次触发可能经过n个tk，要减n
+              void tm_tk_n( struct TM_t *t, unsigned char t1, unsigned char t2 )
+              {
+                      for( ; t1 != t2 ; t1++ )
+                              tm_tk( t );
+              }
+              #endif
+ 140          
+ 141          
+ 142          
+ 143          //
+ 144          void tm_mainfollow( struct TM_t *t )
+ 145          {
+ 146   1              t->ex_is_busy0 = 1;
+ 147   1              if( t->ex_is_hot0 )
+ 148   1              {
+ 149   2                      t->ex_counter2 = t->ex_counter0;
+ 150   2              }
+ 151   1              t->ex_is_hot0 = 0;
+ 152   1              t->ex_is_busy0 = 0;
+ 153   1      
+ 154   1              t->ex_is_busy1 = 1;
+ 155   1              if( t->ex_is_hot1 )
+ 156   1              {
+ 157   2                      t->ex_counter2 = t->ex_counter1;
+ 158   2              }
+ 159   1              t->ex_is_hot1 = 0;
+ 160   1              t->ex_is_busy1 = 0;
+ 161   1      }
+ 162          
+ 163          
+ 164          
+ 165          
+ 166          
+ 167          
+ 168          //频繁rst允许，但代价是 不能影响到初始值。      
+ 169          //如果tk频繁则tk中应该--，如果rst频繁则tk中应该直接清0
+ 170          void tm_rst( struct TM_t *t, U32 rst_value ) 
+ 171          {
+ 172   1              //rst_cmd本身就是一种busy flag可以在外部判断busy_flag，进来时必须已经不busy_flag。或者完全不看busy_flag标
+             -记。
+ 173   1      
+ 174   1      #if TM_PRIORITY_MODE == 0  
+ 175   1              if( t->rst_cmd ) return;
+ 176   1      #else              
+                      if( t->rst_cmd > 200 ) return;
+              #endif
+C51 COMPILER V9.00   A_TIMERFUNC                                                           12/15/2017 18:39:34 PAGE 4   
+
+ 179   1      
+ 180   1              t->rst_value = rst_value;//先有value后有cmd则可防同步问题
+ 181   1      
+ 182   1              t->overflow_flag = 0;
+ 183   1      
+ 184   1      
+ 185   1      #if TM_PRIORITY_MODE == 0  
+ 186   1                      t->rst_cmd = 1;
+ 187   1      #else              
+                              if( t->rst_cmd < 200 ) t->rst_cmd ++;
+              #endif
+ 190   1      }
+ 191          
+ 192          
+ 193          #endif
+ 194          
+ 195          
+ 196          
+ 197          
+ 198          
+ 199          
+ 200          #if 0
+              
+              void tm_rst1( struct TM_t *t, U32 rst_value )
+              {
+              #if TM_PRIORITY_MODE == 0  
+                      if( t->rst_cmd ) return;
+              #else              
+                      if( t->rst_cmd > 200 ) return;
+              #endif
+              
+                      t->rst_value = rst_value;//先有value后有cmd则可防同步问题
+                      t->overflow_flag = 0;
+              
+              #if TM_PRIORITY_MODE == 0  
+                              t->rst_cmd = 1;
+              #else              
+                              if( t->rst_cmd < 200 ) t->rst_cmd ++;
+              #endif
+              }
+              
+              #endif
+ 221          
+ 222          
+ 223          
+ 224          
+ 225          
+ 226          #if 0
+              
+              void tm_rst2( struct TM_t *t, U32 rst_value )
+              {
+              #if TM_PRIORITY_MODE == 0  
+                      if( t->rst_cmd ) return;
+              #else              
+                      if( t->rst_cmd > 200 ) return;
+              #endif
+              
+                      t->rst_value = rst_value;//先有value后有cmd则可防同步问题
+                      t->overflow_flag = 0;
+              
+              #if TM_PRIORITY_MODE == 0  
+                              t->rst_cmd = 1;
+C51 COMPILER V9.00   A_TIMERFUNC                                                           12/15/2017 18:39:34 PAGE 5   
+
+              #else              
+                              if( t->rst_cmd < 200 ) t->rst_cmd ++;
+              #endif
+              }
+              
+              #endif
+ 247          
+ 248          
+ 249          
+ 250          
+ 251          
+ 252          
+ 253          
+ 254          
+ 255          
+ 256          
+ 257          
+ 258          //============= tk 类型，统一登记制度   
+ 259          
+ 260          #if 0
+              
+              
+              struct TMRTKALL_t
+              {
+                      struct TM_t             *m_ptm;         
+              };
+              
+              
+              static struct TMRTKALL_t  tmrtkall_ws[4];
+              static  U8                                tmrtkall_end = 0; //相当于stl中的end，是无效元素                      
+              
+              
+              
+              void tmtkall_reg( struct TM_t *t )              //登记和初始化
+              {
+                      if( tmrtkall_end >= 4 )
+                      {
+                              IAP_CONTR |= 1<<5; 
+              
+                              IAP_CONTR = 0x60; /////////////////总量和上面的数组长度一致////
+                      }
+              
+                      tmrtkall_ws[tmrtkall_end].m_ptm = t;
+              
+                      tm_init( t ); //先初始化再宣布它的存在，不让tk 出问题。
+                      //tm_rst( t, 0 );
+              
+                      tmrtkall_end++; // 再宣布它的存在       
+              }
+              
+              
+              void tmtkall_tk()
+              {
+                      U8 i;
+                      for( i = 0; i < tmrtkall_end; i++ )
+                      {
+                              tm_tk( tmrtkall_ws[i].m_ptm );
+                      }
+              }
+              
+              
+              void tmtkall_mainfollow()
+C51 COMPILER V9.00   A_TIMERFUNC                                                           12/15/2017 18:39:34 PAGE 6   
+
+              {
+                      U8 i;
+                      for( i = 0; i < tmrtkall_end; i++ )
+                      {
+                              tm_mainfollow( tmrtkall_ws[i].m_ptm );
+                      }
+              }
+              
+              
+              
+              
+              #endif
+ 315          
+ 316          
+ 317          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    379    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       7
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

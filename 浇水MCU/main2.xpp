@@ -1,0 +1,181 @@
+
+
+
+struct M1_t	M1;
+
+struct M2_t M2;
+
+struct M3_t M3Work;		 
+struct M3_t M3a;		 
+struct M3_t M3b;		 
+struct M3_t M3c;
+
+struct M4_t	M4[6];
+
+struct M5_t	M5[10];
+
+struct M6_t	M6; 	
+struct M6_t	M6do; 	
+
+
+
+U8	 buf1[25];
+U8 i;
+U8 i2;
+
+
+
+void load_M1_default( struct M1_t *t )
+{
+	memset( t->m_res2, 0x00, 2 * sizeof(U8) );
+	t->m_addr = 0;
+	memset( t->checktail, 0x00, 3 * sizeof(U8) );
+	memset( t->m_buf1, 0x00, 3 * 6 * sizeof(U8) );
+
+}
+
+
+void load_M2_default( struct M2_t *t )
+{
+	t->m_key = 255;
+	t->m_key_res = 0;
+	t->m_key_long = 0;
+	t->m_beepshort = 0;
+	t->m_beeplong = 0;
+	t->m_m4_maxlen = 6;
+	t->m_m4_len = 0;
+	t->m_m4_write = 0;
+	t->m_m4_query = 0;
+	t->m_para_ver = 0;
+	t->m_m5_maxlen = 10;
+	t->m_m5_len = 0;
+	t->m_m5_read = 0;
+	t->m_dp_num = 0;
+	t->m_bat_num = 0;
+	t->m_lasterr = 0;
+	t->m_user_busy = 0;
+
+}
+
+
+void load_M3_default( struct M3_t *t )
+{
+	memset( t->m_res2, 0x00, 2 * sizeof(U8) );
+	t->m_value = 0;
+	t->m_value0 = 0;
+	t->m_value1 = 0;
+	t->m_value2 = 0;
+	t->m_value3 = 0;
+	memset( t->m_buf1, 0x00, 3 * 6 * sizeof(U8) );
+
+}
+
+
+void load_M4_default()
+{
+	M4[0].m_enabled = 1;
+	M4[0].m_veg_id = 999;
+	strcpy( M4[0].m_veg_name , "其它品种" );
+	M4[0].m_price = 900;
+
+	M4[1].m_enabled = 1;
+	M4[1].m_veg_id = 101;
+	strcpy( M4[1].m_veg_name , "菜一品种" );
+	M4[1].m_price = 101;
+
+	M4[2].m_enabled = 1;
+	M4[2].m_veg_id = 202;
+	strcpy( M4[2].m_veg_name , "菜二品种" );
+	M4[2].m_price = 202;
+
+	M4[3].m_enabled = 1;
+	M4[3].m_veg_id = 303;
+	strcpy( M4[3].m_veg_name , "\xB2\xCB\xC8\xFD\xC6\xB7\xD6\xD6" ); // "菜三品种";
+	M4[3].m_price = 303;
+
+	M4[4].m_enabled = 1;
+	M4[4].m_veg_id = 404;
+	strcpy( M4[4].m_veg_name , "第四品类" );
+	M4[4].m_price = 404;
+
+	M4[5].m_enabled = 1;
+	M4[5].m_veg_id = 505;
+	strcpy( M4[5].m_veg_name , "品五类型" );
+	M4[5].m_price = 505;
+}
+
+
+void load_M5_default()
+{
+	memset( &M5, 0x00, sizeof(struct M5_t) );
+ 
+}
+
+
+void load_M6_default( struct M6_t *t )
+{
+	t->m_busy_flag = 0;
+	t->m_cmd_seri = 0;
+	memset( t->m_buf, 0x00, 15 * sizeof(U8) );
+	memset( t->m_buf1, 0x00, 3 * 6 * sizeof(U8) );
+
+}
+
+
+
+void load_M1_EEdata( struct M1_t *t )
+{
+	ET0=0;		// 定时器0中断
+
+	eeprom_read_block( IAP_ADDRE, (unsigned char *)t, sizeof(struct M1_t) );
+	
+	ET0=1;		// 开启定时器0中断
+
+	if( chk_chk5sumU8( (U8 *)t, sizeof(struct M1_t) , 3 ) )
+		return;
+	 
+	load_M1_default(t);
+}
+
+
+
+void save_M1_EEdata( struct M1_t *t )
+{
+	ET0=0;		// 定时器0中断
+
+	if( eeprom_check_diff_block( IAP_ADDRE, (unsigned char *)t, sizeof(struct M1_t) ) )
+	{
+		IapEraseSector(IAP_ADDRE);
+			
+		mk_chk5sumU8( (U8 *)t, sizeof(struct M1_t) , 3 );
+
+		eeprom_write_block( IAP_ADDRE, (unsigned char *)t, sizeof(struct M1_t) );
+	}
+
+	ET0=1;		// 开启定时器0中断
+}
+
+
+
+
+
+//void send_struct( unsigned char * buf, unsigned char iBufLen )
+//{
+//	U8 i; 
+//	
+//	for( i = 0; i < iBufLen; i++ )
+//	{
+//		//Com1SendU8( buf[i] );
+//		Com2SendU8( buf[i] );
+//	}
+//}
+//
+
+
+
+
+
+
+
+
+
